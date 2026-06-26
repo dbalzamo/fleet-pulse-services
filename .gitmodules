@@ -4,3 +4,6 @@
 [submodule "fleet-service"]
 	path = fleet-service
 	url = https://github.com/dbalzamo/fleet-service.git
+[submodule "fleet-gateway"]
+	path = fleet-gateway
+	url = https://github.com/dbalzamo/fleet-gateway.git
