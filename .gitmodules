@@ -1,0 +1,6 @@
+[submodule "auth-service"]
+	path = auth-service
+	url = https://github.com/dbalzamo/auth-service.git
+[submodule "fleet-service"]
+	path = fleet-service
+	url = https://github.com/dbalzamo/fleet-service.git
