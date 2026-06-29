@@ -1,0 +1,9 @@
+[submodule "auth-service"]
+	path = auth-service
+	url = https://github.com
+[submodule "fleet-service"]
+	path = fleet-service
+	url = https://github.com
+[submodule "fleet-gateway"]
+	path = fleet-gateway
+	url = https://github.com
