@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fleet-pulse
+
+resources:
+  - namespace.yaml
+  - postgres/secret.yaml
+  - postgres/pvc.yaml
+  - postgres/init-configmap.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - auth-service/configmap.yaml
+  - auth-service/secret.yaml
+  - auth-service/deployment.yaml
+  - auth-service/service.yaml
