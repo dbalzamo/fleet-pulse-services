@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-service-config
+  namespace: fleet-pulse
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/robofleet_db
+  SERVER_PORT: "8081"
