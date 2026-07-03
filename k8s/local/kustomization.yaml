@@ -14,3 +14,7 @@ resources:
   - auth-service/secret.yaml
   - auth-service/deployment.yaml
   - auth-service/service.yaml
+  - api-gateway/configmap.yaml
+  - api-gateway/secret.yaml
+  - api-gateway/deployment.yaml
+  - api-gateway/service.yaml
