@@ -1,3 +1,17 @@
+# ============================================================================
+# SERVICE: postgres (headless) — namespace fleet-pulse
+# ----------------------------------------------------------------------------
+# FIX rispetto alla versione precedente: mancava 'clusterIP: None'. Senza
+# quel campo, anche con 'type: ClusterIP' esplicito, il Service NON è
+# headless — è un ClusterIP normale con IP virtuale e load balancing verso
+# i pod, che è esattamente quello che NON vogliamo con un StatefulSet:
+# perderesti il DNS stabile per-pod (postgres-0.postgres.fleet-pulse...).
+#
+# 'clusterIP: None' è ciò che dice a Kubernetes "non assegnare un IP
+# virtuale, crea invece un record DNS per ogni pod del StatefulSet
+# associato". 'type: ClusterIP' può restare (è il default comunque),
+# ma il campo decisivo è clusterIP: None.
+# ============================================================================
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,7 +20,7 @@ metadata:
   labels:
     app: postgres
 spec:
-  type: ClusterIP
+  clusterIP: None
   selector:
     app: postgres
   ports:

@@ -1,3 +1,16 @@
+# ============================================================================
+# SERVICE: auth-service
+# ----------------------------------------------------------------------------
+# ClusterIP (il default) = accessibile solo dentro il cluster, da altri
+# pod. Corretto per un microservizio "interno" che altri servizi
+# chiameranno (es. un futuro API gateway o un frontend). Per esporlo
+# anche all'esterno del cluster hai due opzioni, entrambe da valutare
+# quando servirà:
+#   - NodePort/LoadBalancer su questo stesso Service (rapido ma poco
+#     flessibile per gestire più servizi/domini)
+#   - un Ingress dedicato (più corretto se in futuro avrai più
+#     microservizi da esporre sotto path/domini diversi)
+# ============================================================================
 apiVersion: v1
 kind: Service
 metadata:

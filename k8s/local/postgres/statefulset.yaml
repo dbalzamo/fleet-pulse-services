@@ -1,0 +1,100 @@
+# ============================================================================
+# STATEFULSET: postgres (postgis) — namespace fleet-pulse
+# ----------------------------------------------------------------------------
+# Conversione del tuo Deployment originale in StatefulSet. Cosa cambia e
+# perché:
+#
+# 1. kind: Deployment -> StatefulSet
+#    Dà identità stabile al pod (postgres-0) e volume dedicato che lo
+#    segue anche se il pod viene ricreato — il pattern corretto per un DB.
+#
+# 2. Aggiunto 'serviceName: postgres'
+#    Campo OBBLIGATORIO per un StatefulSet: collega il set al Service
+#    headless che gli dà il DNS stabile. Deve corrispondere esattamente
+#    al nome del Service (fp-02-postgres-service.yaml).
+#
+# 3. Il volume 'postgres-data' non è più un riferimento a una PVC esistente
+#    (persistentVolumeClaim / claimName), ma un 'volumeClaimTemplate':
+#    Kubernetes lo crea automaticamente per te, con nome
+#    'postgres-data-postgres-0'. Se avevi già una PVC manuale chiamata
+#    'postgres-data' con dati importanti dentro, NON verrà riusata da
+#    questo StatefulSet — pianifica una migrazione dei dati se servisse
+#    (pg_dump/pg_restore, o copia manuale del volume) prima di eliminarla.
+#
+# 4. Il volume 'init-scripts' (ConfigMap) resta INVARIATO nel pod template:
+#    non è dati persistenti, è configurazione condivisa e identica per
+#    ogni eventuale replica, quindi resta un volume normale, non un
+#    volumeClaimTemplate.
+#
+# Tutto il resto (immagine, envFrom, probe, resources) è rimasto identico
+# al tuo Deployment originale — nessuna modifica non necessaria.
+# ============================================================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: fleet-pulse
+  labels:
+    app: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgis/postgis:16-3.4
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
+            limits:
+              memory: 512Mi
+              cpu: 500m
+
+  # Caratteristica distintiva del StatefulSet rispetto al Deployment:
+  # per ogni pod (qui solo postgres-0, dato replicas: 1) Kubernetes crea
+  # automaticamente una PVC dedicata usando questo template.
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        # Se il tuo cluster usa una StorageClass diversa da 'standard'
+        # (es. su minikube di solito è 'standard', su un cluster gestito
+        # potrebbe essere diversa), aggiornala qui di conseguenza.
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi

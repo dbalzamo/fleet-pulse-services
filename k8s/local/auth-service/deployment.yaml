@@ -1,3 +1,12 @@
+# ============================================================================
+# DEPLOYMENT: auth-service
+# ----------------------------------------------------------------------------
+# A differenza di Postgres, auth-service è STATELESS (non tiene stato
+# persistente sul filesystem locale del pod: lo stato vive nel DB). Per un
+# workload stateless, Deployment è la scelta corretta: puoi scalare le
+# repliche liberamente, Kubernetes le distribuisce e le rimpiazza senza
+# preoccuparsi di volumi dedicati.
+# ============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +15,7 @@ metadata:
   labels:
     app: auth-service
 spec:
-  replicas: 1
+  replicas: 2 # due repliche = se un pod va giù o va in restart, l'altro serve traffico
   selector:
     matchLabels:
       app: auth-service
@@ -15,6 +24,13 @@ spec:
       labels:
         app: auth-service
     spec:
+      # Credenziali per il pull dell'immagine da Nexus (registry privato).
+      # Il Secret 'nexus-registry-secret' NON è in questi manifest perché
+      # contiene credenziali: si crea con un comando kubectl (vedi README),
+      # non va versionato in chiaro.
+      imagePullSecrets:
+        - name: nexus-registry-secret
+
       initContainers:
         - name: wait-for-postgres
           image: postgres:16-alpine
@@ -33,34 +49,50 @@ spec:
             - sh
             - -c
             - until pg_isready -h postgres -p 5432 -U "$POSTGRES_USER"; do echo "waiting for postgres..."; sleep 2; done
+
       containers:
         - name: auth-service
-          image: auth-service:local
+          # :IMAGE_TAG è un placeholder: in pipeline lo sostituirai con il
+          # tag reale (es. develop-23), tipicamente con 'sed' o 'kubectl set image'
+          # — vedi il commento nel README su come integrarlo in Jenkins.
+          image: host.docker.internal:8082/auth-service:develop-18
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
+
           envFrom:
             - configMapRef:
                 name: auth-service-config
             - secretRef:
                 name: auth-service-secret
+
           startupProbe:
             tcpSocket:
               port: 8081
             failureThreshold: 30
             periodSeconds: 5
+
+          # Readiness: quando NON è pronto, il pod viene tolto dal Service
+          # (niente traffico instradato lì) ma NON viene riavviato. Utile
+          # durante lo startup di Spring (context loading, connessione DB).
           readinessProbe:
             tcpSocket:
               port: 8081
             periodSeconds: 10
+
+          # Liveness: se fallisce ripetutamente, Kubernetes UCCIDE e
+          # ricrea il pod (assume che sia bloccato in uno stato non
+          # recuperabile). Va tenuto più permissivo della readiness per
+          # evitare restart-loop inutili durante uno startup lento.
           livenessProbe:
             tcpSocket:
               port: 8081
             periodSeconds: 30
+
           resources:
             requests:
-              memory: 512Mi
-              cpu: 250m
+              cpu: 200m
+              memory: 384Mi
             limits:
+              cpu: 750m
               memory: 768Mi
-              cpu: 500m

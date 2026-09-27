@@ -1,3 +1,13 @@
+# ============================================================================
+# NAMESPACE
+# ----------------------------------------------------------------------------
+# Isoliamo tutte le risorse di questo progetto in un namespace dedicato,
+# invece di usare 'default'. Vantaggi:
+#  - puoi applicare RBAC/quota/network policy specifiche per il progetto
+#  - eviti collisioni di nomi con altri progetti nello stesso cluster
+#  - puoi cancellare tutto con un solo comando in fase di test:
+#      kubectl delete namespace auth-service
+# ============================================================================
 apiVersion: v1
 kind: Namespace
 metadata:

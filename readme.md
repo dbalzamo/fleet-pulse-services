@@ -434,7 +434,7 @@ namespace: fleet-pulse                           # Namespace di default per tutt
 resources:
   - namespace.yaml
   - postgres/secret.yaml
-  - postgres/pvc.yaml
+  - postgres/statefulset.yaml
   - postgres/deployment.yaml
   - postgres/service.yaml
   - auth-service/configmap.yaml

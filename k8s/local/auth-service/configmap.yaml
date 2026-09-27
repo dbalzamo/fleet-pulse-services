@@ -1,8 +1,21 @@
+# ============================================================================
+# CONFIGMAP: configurazione non sensibile di auth-service
+# ----------------------------------------------------------------------------
+# Qui vanno SOLO valori non sensibili (a differenza del Secret): URL,
+# profili Spring, nomi di host. La password del DB resta nel Secret.
+#
+# SPRING_DATASOURCE_URL usa il nome DNS del Service headless Postgres:
+# "postgres.auth-service.svc.cluster.local" è risolvibile da qualsiasi pod
+# nello stesso cluster, indipendentemente dal namespace (grazie al FQDN
+# completo). Se preferisci il nome corto "postgres" funziona comunque, ma
+# SOLO se il pod che lo usa è nello stesso namespace "auth-service".
+# ============================================================================
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: auth-service-config
   namespace: fleet-pulse
 data:
+  SPRING_PROFILES_ACTIVE: "kubernetes"
   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/robofleet_db
   SERVER_PORT: "8081"
